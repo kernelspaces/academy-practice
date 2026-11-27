@@ -1,0 +1,8 @@
+audit-skills 0.4.2 (스킬만 설치하는 배포본)
+finance-ai-skills (finance-ai-skills)
+ref origin/main
+커밋 047e201
+고객 이름 바꿈: 3개 파일
+
+공개 스킬 일곱(표본sampling · 표준조서 · 절차점검 · 리스회계 · 회계기준검토 · DSD변환 · DSD초안)
+hany202507/finance-ai-skills efc59e5 finance-ai-skills 0.31.0

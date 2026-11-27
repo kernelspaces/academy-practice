@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>감사 현황 예시</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  header.top{display:flex;gap:8px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--line);padding:8px 16px}
+  .brand{display:flex;gap:8px;align-items:center}
+  .brand img{width:32px;height:32px}
+  .brand h1{font-size:16px;font-weight:800;margin:0}
+  .brand .sub{color:var(--muted);font-size:12px}
+  .hero{margin-top:16px;border-radius:16px;border:1px solid var(--line);background:var(--block) url(img/hero.webp) no-repeat right center / auto 100%;min-height:150px;padding:24px 28px;display:flex;align-items:center}
+  .hero h2{margin:0;font-size:22px;line-height:1.4;font-weight:800;max-width:56%}
+  .hero p{margin:6px 0 0;font-size:13px;color:var(--leaf)}
+  main{display:flex;flex-direction:column;gap:16px;margin-top:18px}
+  .who{display:flex;gap:6px;flex-wrap:wrap}
+  @media (max-width:640px){.hero{background-size:auto 110px;background-position:right -10px bottom;padding:20px 18px 118px}.hero h2{max-width:100%}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <img src="img/mascot.webp" alt="">
+    <h1>감사 현황</h1>
+    <span class="sub">예시 화면 · 숫자는 가상</span>
+  </div>
+  <div><button>새로 고침</button> <button class="primary">현황 게시</button></div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <h2>회사 2곳, 빠진 자료 14건</h2>
+      <p>기록을 읽어 보여 줍니다. 화면에서 넣는 값은 없습니다.</p>
+    </div>
+  </div>
+
+  <main>
+    <div class="tiles">
+      <div class="tile"><div class="k">회사</div><div class="v">2</div></div>
+      <div class="tile"><div class="k">요청 받음</div><div class="v">31</div></div>
+      <div class="tile"><div class="k">빠짐</div><div class="v">14</div></div>
+      <div class="tile"><div class="k">회계사 확인 대기</div><div class="v">3</div></div>
+    </div>
+
+    <div class="notice">잔고증명서 기준일이 결산일과 다릅니다. 재요청 여부를 회계사가 정해야 합니다.</div>
+
+    <div class="card">
+      <h2>회사별 진행</h2>
+      <p class="lead">받음과 빠짐은 스킬 결과(_색인)에서, 남은 일은 진행메모에서 읽습니다.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>회사</th><th>결산일</th><th>받음</th><th>빠짐</th><th>남은 일</th><th>진행</th></tr></thead>
+          <tbody>
+            <tr><td>도담소프트(가상)</td><td>2025-12-31</td><td class="num">20</td><td class="num">9</td><td class="num">4</td><td style="min-width:120px"><div class="bar"><i style="width:69%"></i></div></td></tr>
+            <tr><td>가온정밀(가상)</td><td>2025-12-31</td><td class="num">11</td><td class="num">5</td><td class="num">6</td><td><div class="bar"><i style="width:40%"></i></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>항목별 맡은 쪽</h2>
+      <p class="lead">스킬과 에이전트 표시는 훅 기록에서, 회계사 표시는 진행메모 「정한 것」 에서 읽습니다.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>조서</th><th>항목</th><th>맡은 쪽</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip wp">1100</span></td><td>요청자료 목록</td><td><div class="who"><span class="chip">스킬</span></div></td><td><span class="chip ok">끝</span></td></tr>
+            <tr><td><span class="chip wp">2100</span></td><td>사전 회사분석 메모</td><td><div class="who"><span class="chip">에이전트</span><span class="chip">회계사</span></div></td><td><span class="chip warn">회계사 확인</span></td></tr>
+            <tr><td><span class="chip wp">4000C</span></td><td>매출채권 조서 설계</td><td><div class="who"><span class="chip">에이전트</span></div></td><td><span class="chip bad">절차 빠짐 2</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="empty">작업 기록이 없습니다. 회사 폴더에서 세션을 한 번 열면 여기에 표시됩니다.</div>
+  </main>
+</div>
+</body>
+</html>

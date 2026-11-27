@@ -1,0 +1,145 @@
+"""감사에이전트 명령줄: setup · newcase · status · team · check."""
+from __future__ import annotations
+
+import argparse
+import datetime
+import json
+import re
+import sys
+import webbrowser
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from board import summary, write_board  # noqa: E402
+from checks import run_checks  # noqa: E402
+from paths import base_dir, find_case, find_root, say, skills_dir  # noqa: E402
+from setup import make_root, new_case, repair_settings  # noqa: E402
+from status import get_publish_url, set_publish_url, write_publish, write_status  # noqa: E402
+from team import get_team_url, set_team_url, write_team_publish  # noqa: E402
+
+PLUGIN_ROOT = base_dir()
+PBC = skills_dir() / "PBC요청자료" / "scripts" / "run.py"
+BAD_NAME_CHARS = set('<>:"/|?*') | {chr(92)}
+
+
+def _print_checks(plugin_root: Path, root) -> int:
+    results = run_checks(plugin_root, root)
+    for ok, name, detail in results:
+        print(f"{'통과' if ok else '실패'}  {name}  {detail}".rstrip())
+    return 0 if all(ok for ok, _, _ in results) else 1
+
+
+def _bad_company(company: str) -> bool:
+    return (not company or company in (".", "..") or company != Path(company).name
+            or company[-1] in ". " or any(ch in BAD_NAME_CHARS for ch in company))
+
+
+def _bad_date(value: str) -> bool:
+    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
+        return True
+    try:
+        datetime.date.fromisoformat(value)
+    except ValueError:
+        return True
+    return False
+
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(prog="hub.py")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("setup")
+    s.add_argument("--root")
+    n = sub.add_parser("newcase")
+    n.add_argument("--root")
+    n.add_argument("--company", required=True)
+    n.add_argument("--fy-end", required=True)
+    n.add_argument("--pbc", default=str(PBC))
+    t = sub.add_parser("status")
+    t.add_argument("--root")
+    t.add_argument("--open", action="store_true")
+    t.add_argument("--publish", action="store_true", help="아티팩트로 올릴 게시용 파일을 만든다")
+    t.add_argument("--set-url", help="게시한 아티팩트 주소를 감사 루트에 적어 둔다")
+    m = sub.add_parser("team", help="AI감사팀 화면 게시용 파일")
+    m.add_argument("--root")
+    m.add_argument("--publish", action="store_true", help="아티팩트로 올릴 게시용 파일을 만든다(기본)")
+    m.add_argument("--set-url", help="게시한 AI감사팀 주소를 감사 루트에 적어 둔다")
+    b = sub.add_parser("board", help="회사 한 건의 감사대시보드(스킬 · 에이전트 · 회계사 구분)")
+    b.add_argument("--case", help="회사 폴더. 없으면 지금 폴더에서 찾는다")
+    b.add_argument("--open", action="store_true")
+    c = sub.add_parser("check")
+    c.add_argument("--root")
+    args = p.parse_args(argv)
+
+    if args.cmd == "newcase":
+        if _bad_company(args.company):
+            print("회사 이름이 비었거나 폴더 이름으로 쓸 수 없는 글자가 있습니다. 경로 구분 글자와 < > : \" | ? * 는 뺍니다.",
+                  file=sys.stderr)
+            return 2
+        if _bad_date(args.fy_end):
+            print("결산일은 YYYY-MM-DD 형식으로 적어 주십시오.", file=sys.stderr)
+            return 2
+
+    if args.cmd == "board":
+        case = find_case(Path(args.case).expanduser() if args.case else Path.cwd())
+        if case is None:
+            print("회사 폴더를 찾지 못했습니다. 회사 폴더에서 돌리거나 --case 로 주십시오", file=sys.stderr)
+            return 2
+        try:
+            page = write_board(case)
+        except FileNotFoundError:
+            print("감사대시보드 스킬을 찾지 못했습니다. 스킬 묶음을 다시 설치해 주십시오", file=sys.stderr)
+            return 2
+        print(page)
+        print(summary(case))
+        if args.open:
+            webbrowser.open(page.as_uri())
+        return 0
+
+    root = Path(args.root).expanduser().resolve() if args.root else find_root(Path.cwd())
+    if args.cmd == "setup":
+        root = root or Path.home() / "감사"
+        for w in make_root(root):
+            print(f"만듦  {w}")
+        for w in repair_settings(root):
+            print(f"권한 파일  {w}")
+        return _print_checks(PLUGIN_ROOT, root)
+    if root is None:
+        print(f"감사 루트를 찾지 못했습니다. --root 로 주거나 {say('설치')} 를 먼저 돌려 주십시오")
+        return 2
+    if args.cmd == "newcase":
+        print(json.dumps(new_case(root, args.company, args.fy_end, args.pbc), ensure_ascii=False, indent=1))
+    elif args.cmd == "status" and args.set_url:
+        try:
+            set_publish_url(root, args.set_url)
+        except ValueError as e:
+            print(f"{e}: {args.set_url}", file=sys.stderr)
+            return 2
+        print(f"게시 주소  {args.set_url}")
+    elif args.cmd == "status" and args.publish:
+        print(f"게시용 파일  {write_publish(root, cwd=Path.cwd())}")
+        print(f"게시 주소  {get_publish_url(root) or '없음'}")
+    elif args.cmd == "status":
+        page = write_status(root)
+        print(page)
+        if args.open:
+            webbrowser.open(page.as_uri())
+    elif args.cmd == "team" and args.set_url:
+        try:
+            set_team_url(root, args.set_url)
+        except ValueError as e:
+            print(f"{e}: {args.set_url}", file=sys.stderr)
+            return 2
+        print(f"게시 주소  {args.set_url}")
+    elif args.cmd == "team":
+        print(f"게시용 파일  {write_team_publish(root, cwd=Path.cwd())}")
+        print(f"게시 주소  {get_team_url(root) or '없음'}")
+    elif args.cmd == "check":
+        return _print_checks(PLUGIN_ROOT, root)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+    sys.exit(main())
